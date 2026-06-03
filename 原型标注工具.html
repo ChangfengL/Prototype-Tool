@@ -163,10 +163,12 @@ var css=`
 .pa-act span{cursor:pointer;width:25px;height:25px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:12px;}
 .pa-act span:hover{background:rgba(242,237,228,.16);}
 .pa-foot{display:flex;gap:10px;padding:11px 14px;border-top:1px solid rgba(242,237,228,.1);}
-.pa-foot button{flex:1;font:600 12px var(--sans);border-radius:10px;border:1px solid rgba(242,237,228,.16);background:rgba(242,237,228,.06);color:var(--paper);padding:9px;cursor:pointer;transition:.15s;letter-spacing:.02em;}
-.pa-foot button:hover{background:rgba(242,237,228,.12);}
-.pa-foot .pri{background:linear-gradient(135deg,#FF4438,#FF6B35);color:#fff;border:none;box-shadow:0 4px 14px rgba(255,68,56,.35);}
-.pa-foot .pri:hover{filter:brightness(1.08);}
+.pa-foot button{font:600 12px var(--sans);border-radius:10px;padding:9px 12px;cursor:pointer;letter-spacing:.02em;transition:background .15s,border-color .15s,color .15s,box-shadow .15s;}
+.pa-foot .pri{flex:1;background:transparent;border:1px solid rgba(255,68,56,.55);color:#FF8A7A;}
+.pa-foot .pri:hover,.pa-foot .pri:focus-visible{background:linear-gradient(135deg,#FF4438,#FF6B35);border-color:transparent;color:#fff;box-shadow:0 6px 16px rgba(255,68,56,.45);outline:none;}
+.pa-foot .pri:active{box-shadow:0 2px 8px rgba(255,68,56,.4);}
+.pa-foot .pa-clr{flex:0 0 auto;background:transparent;border:1px solid transparent;color:var(--muted);}
+.pa-foot .pa-clr:hover,.pa-foot .pa-clr:focus-visible{background:rgba(242,237,228,.08);color:var(--paper);outline:none;}
 .pa-dialog{position:fixed;z-index:2147483646;width:340px;background:linear-gradient(165deg,rgba(42,35,30,.98),rgba(22,18,15,.99));backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2);border:1px solid rgba(242,237,228,.16);border-radius:16px;box-shadow:0 28px 80px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06);color:var(--paper);font:13px var(--sans);overflow:hidden;}
 .pa-dhead{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:move;user-select:none;border-bottom:1px solid rgba(242,237,228,.1);}
 .pa-dttl{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:.02em;}
