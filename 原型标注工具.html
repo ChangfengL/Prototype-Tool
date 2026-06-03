@@ -143,6 +143,8 @@ var css=`
 .pa-toggle.on .pa-state{color:#FF8A7A;}
 .pa-toggle.on .pa-ico{color:#FF6B5A;}
 .pa-panel{width:330px;max-height:60vh;background:linear-gradient(165deg,rgba(40,34,29,.97),rgba(20,17,14,.98));backdrop-filter:blur(16px) saturate(1.2);-webkit-backdrop-filter:blur(16px) saturate(1.2);color:var(--paper);border:1px solid rgba(242,237,228,.14);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.05);font:13px var(--sans);display:none;flex-direction:column;overflow:hidden;}
+.pa-phead{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:11px 14px;border-bottom:1px solid rgba(242,237,228,.1);cursor:move;user-select:none;}
+.pa-ptitle{display:flex;align-items:center;gap:7px;font-weight:700;letter-spacing:.02em;}
 .pa-body{overflow:auto;flex:1;}
 .pa-grp{padding:10px 14px 5px;color:var(--amber);font:700 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;position:sticky;top:0;background:rgba(26,22,18,.96);backdrop-filter:blur(4px);}
 .pa-item{display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(242,237,228,.06);align-items:flex-start;transition:background .15s;cursor:pointer;}
@@ -216,15 +218,15 @@ var css=`
 body.pa-on,body.pa-on *{cursor:crosshair !important;}
 body.pa-on .pa-fab,body.pa-on .pa-fab *,body.pa-on .pa-panel,body.pa-on .pa-panel *,body.pa-on .pa-dialog,body.pa-on .pa-dialog *{cursor:default !important;}
 body.pa-on .pa-toggle{cursor:grab !important;}
-body.pa-on .pa-dhead{cursor:move !important;}
+body.pa-on .pa-dhead,body.pa-on .pa-phead{cursor:move !important;}
 body.pa-on .pa-dialog input,body.pa-on .pa-dialog textarea,body.pa-on .pa-hex{cursor:text !important;}
 body.pa-on .pa-dialog input[type=color],body.pa-on .pa-dialog select,body.pa-on .pa-dialog button,body.pa-on .pa-none,body.pa-on .pa-reset,body.pa-on .pa-modebtn,body.pa-on .pa-dx,body.pa-on .pa-badge,body.pa-on .pa-item,body.pa-on .pa-foot button,body.pa-on .pa-act span{cursor:pointer !important;}
 `;
 var st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
 
 var fab=document.createElement('div');fab.className='pa-fab';
-fab.innerHTML='<div class="pa-toggle"><span class="pa-ico">⌖</span><span class="pa-lab">原型标注</span><span class="pa-cnt">0</span><span class="pa-state">OFF</span><span class="pa-sw"></span></div>'
-+'<div class="pa-panel"><div class="pa-body"></div><div class="pa-foot"><button class="pri pa-copy">📋 复制给 AI</button><button class="pa-clr">清空</button></div></div>';
+fab.innerHTML='<div class="pa-toggle"><span class="pa-ico">⌖</span><span class="pa-lab">原型标注</span><span class="pa-state">OFF</span><span class="pa-sw"></span></div>'
++'<div class="pa-panel"><div class="pa-phead"><span class="pa-ptitle">📋 标注清单</span><span class="pa-cnt">0</span></div><div class="pa-body"></div><div class="pa-foot"><button class="pri pa-copy">📋 复制给 AI</button><button class="pa-clr">清空</button></div></div>';
 document.body.appendChild(fab);
 var btn=fab.querySelector('.pa-toggle');
 var panel=fab.querySelector('.pa-panel');
@@ -370,7 +372,7 @@ window.addEventListener('scroll',renderMarks,true);
 window.addEventListener('resize',function(){renderMarks();[fab,document.querySelector('.pa-dialog')].forEach(function(el){if(el&&el.style.left)clamp(el);});});
 
 function drag(handle,target){handle.addEventListener('mousedown',function(e){if(e.button!==0)return;var sx=e.clientX,sy=e.clientY;var r=target.getBoundingClientRect();var ox=r.left,oy=r.top;var moved=false;function mv(ev){if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>4){moved=true;target._drag=true;}if(moved){var nx=ox+ev.clientX-sx,ny=oy+ev.clientY-sy;var maxX=window.innerWidth-target.offsetWidth-6,maxY=window.innerHeight-target.offsetHeight-6;nx=Math.max(6,Math.min(nx,Math.max(6,maxX)));ny=Math.max(6,Math.min(ny,Math.max(6,maxY)));target.style.left=nx+'px';target.style.top=ny+'px';target.style.right='auto';target.style.bottom='auto';}}function up(){document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);setTimeout(function(){target._drag=false;},0);}document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);});}
-drag(btn,fab);
+drag(btn,fab);drag(panel.querySelector('.pa-phead'),fab);
 
 window[NS]={toggle:toggle,setMode:setMode,exportMd:exportMd};
 applyAll();renderAll();setMode(true);
