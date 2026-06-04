@@ -33,17 +33,27 @@
   .tag b{color:var(--amber);font-weight:700;}
 
   .card{background:linear-gradient(165deg,rgba(40,34,29,.72),rgba(20,17,14,.6));border:1px solid var(--line);border-radius:18px;padding:24px 26px;margin:22px 0;box-shadow:0 20px 50px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.04);}
-  .card h3{margin:0 0 16px;font-size:15px;color:var(--paper);display:flex;align-items:center;gap:11px;letter-spacing:.01em;}
-  .card h3 .num{font:700 12px/1 var(--mono);color:var(--red);background:rgba(255,68,56,.14);border:1px solid rgba(255,68,56,.32);width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;}
+  .card h3{margin:0 0 16px;font-size:18px;font-weight:700;color:var(--paper);display:flex;align-items:center;gap:12px;letter-spacing:.01em;}
+  .card h3 .num{font:700 15px/1 var(--sans);color:#fff;background:linear-gradient(135deg,#FF4438,#FF6B35);border:none;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(255,68,56,.3);flex:0 0 auto;}
   .card p{margin:10px 0;}
   .card p b{color:var(--paper);}
 
-  .bm{display:inline-flex;align-items:center;gap:11px;background:linear-gradient(165deg,rgba(40,34,29,.97),rgba(22,18,15,.97));border:1px solid rgba(255,68,56,.45);color:var(--paper);font:700 14px var(--sans);padding:11px 16px 11px 18px;border-radius:999px;text-decoration:none;cursor:grab;box-shadow:0 12px 30px rgba(255,68,56,.26),inset 0 1px 0 rgba(255,255,255,.07);user-select:none;letter-spacing:.03em;transition:transform .15s,box-shadow .15s;}
-  .bm:hover{transform:translateY(-2px);box-shadow:0 16px 42px rgba(255,68,56,.4);}
-  .bm:active{cursor:grabbing;}
-  .bm .ico{color:var(--amber);font-size:17px;}
+  .bm-wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .bm{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(165deg,rgba(40,34,29,.97),rgba(22,18,15,.97));border:1px solid rgba(242,237,228,.16);color:var(--paper);font:600 13px var(--sans);padding:10px 15px;border-radius:14px;text-decoration:none;cursor:grab;box-shadow:0 12px 32px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06);user-select:none;letter-spacing:.04em;transition:transform .15s,box-shadow .15s,border-color .15s;animation:bm-attn 2.6s ease-in-out infinite;}
+  .bm:hover{transform:translateY(-2px);border-color:rgba(255,68,56,.55);box-shadow:0 16px 40px rgba(255,68,56,.35);animation:none;}
+  .bm:active{cursor:grabbing;transform:scale(.99);}
+  .bm .grip{color:var(--muted);font-size:15px;line-height:1;cursor:grab;}
+  .bm .ico{color:var(--amber);font-size:16px;}
+  .bm .bm-lab{font-weight:600;letter-spacing:.04em;}
   .bm .mini{position:relative;width:36px;height:20px;border-radius:999px;background:linear-gradient(90deg,#FF4438,#FF6B35);flex:0 0 auto;box-shadow:inset 0 1px 2px rgba(0,0,0,.3);}
   .bm .mini::after{content:"";position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.4);}
+  @keyframes bm-attn{0%,100%{box-shadow:0 12px 32px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06),0 0 0 0 rgba(255,68,56,0);}50%{box-shadow:0 12px 32px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06),0 0 0 7px rgba(255,68,56,.13);}}
+  .bm-hint{font:600 12px var(--sans);color:var(--amber);display:inline-flex;align-items:center;gap:6px;}
+  .bm-hint .arrow{animation:bm-arrow 1.4s ease-in-out infinite;}
+  @keyframes bm-arrow{0%,100%{transform:translateX(0);}50%{transform:translateX(-5px);}}
+  .bm-warn{display:none;font:600 12px var(--sans);color:#FF8A7A;background:rgba(255,68,56,.12);border:1px solid rgba(255,68,56,.35);border-radius:8px;padding:5px 11px;}
+  .bm-warn.show{display:inline-flex;align-items:center;animation:bm-warnin .22s ease;}
+  @keyframes bm-warnin{from{opacity:0;transform:translateY(-3px);}to{opacity:1;transform:translateY(0);}}
 
   textarea#bm-code{width:100%;height:84px;background:rgba(0,0,0,.35);color:var(--muted);border:1px dashed var(--line);border-radius:10px;padding:11px 12px;font:11px/1.5 var(--mono);box-sizing:border-box;resize:vertical;outline:none;}
   textarea#bm-code:focus{border-color:rgba(255,176,32,.4);color:#cfc6b8;}
@@ -67,7 +77,7 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>原型标注<span class="pin">1</span></h1>
+    <h1>原型标注</h1>
     <p class="lead">在浏览器里给<b>任意 HTML 页面</b>做可视化点选标注的审阅仪器。不修改任何文件、纯运行时浮层——装一次，对所有页面通用。</p>
     <div class="row">
       <span class="tag"><b>零</b> 污染</span>
@@ -77,16 +87,16 @@
     </div>
 
     <div class="card">
-      <h3><span class="num">A</span>安装（任选其一）</h3>
+      <h3><span class="num">一</span>安装（任选其一）</h3>
       <p><b>方式 A · 拖拽安装：</b>把下面这枚开关直接拖到浏览器的<b>书签栏</b>即可。</p>
-      <p><a class="bm" id="bm"><span class="ico">⌖</span><span>原型标注</span><span class="mini"></span></a></p>
+      <p class="bm-wrap"><a class="bm" id="bm" title="按住拖到浏览器书签栏（请勿直接点击）"><span class="grip" aria-hidden="true">⠿</span><span class="ico">⌖</span><span class="bm-lab">原型标注</span><span class="mini"></span></a><span class="bm-hint"><span class="arrow">👈</span>按住拖到<b>书签栏</b></span><span id="bm-warn" class="bm-warn">⚠️ 是「拖到书签栏」，不是点击我哦～</span></p>
       <p style="margin-top:20px"><b>方式 B · 手动安装：</b>新建一个书签，名称随意，把下面这段代码粘贴到“网址 / URL”里保存。</p>
       <textarea id="bm-code" readonly></textarea>
       <button class="copy" onclick="copyCode()">📋 复制书签代码</button>
     </div>
 
     <div class="card">
-      <h3><span class="num">B</span>用法</h3>
+      <h3><span class="num">二</span>用法</h3>
       <ol class="steps">
         <li>用 Chrome / Edge 打开任意要标注的网页或 HTML 文件（拖入或本地服务器均可）。</li>
         <li>点书签栏的 <span class="k">⌖ 原型标注</span> → 右上角出现<b>开关浮窗</b>、进入标注模式（开关亮起为 ON）。</li>
@@ -97,7 +107,7 @@
     </div>
 
     <div class="card">
-      <h3><span class="num">C</span>备注</h3>
+      <h3><span class="num">三</span>备注</h3>
       <ul class="notes">
         <li><b>file://</b> 打开也能用；若某些浏览器有限制，推荐用本地服务器（如 <code>npx serve</code>）打开页面。</li>
         <li>它只在<b>浏览器内存</b>中运行，<b>不向被标注的页面写入任何代码</b>；可视化微调只是<b>运行时预览</b>，刷新后从本地存储重新套用，永不落到文件。</li>
@@ -366,7 +376,7 @@ function exportMd(){if(!annos.length)return'（无标注）';var g={};annos.forE
 function copyOut(){if(!annos.length){toast('还没有标注','点击页面元素即可添加');return;}var md=exportMd();var ta=document.createElement('textarea');ta.value=md;ta.style.cssText='position:fixed;left:-9999px;';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}try{if(navigator.clipboard)navigator.clipboard.writeText(md);}catch(e){}ta.remove();toast('已复制 '+annos.length+' 条标注','含 before→after 精确值，直接粘贴给 AI');}
 function toast(title,sub){var t=document.querySelector('.pa-toast');if(!t){t=document.createElement('div');t.className='pa-toast';document.body.appendChild(t);}t.innerHTML='<span class="pa-ti">⌖</span><span class="pa-tt"><b>'+esc(title)+'</b>'+(sub?'<i>'+esc(sub)+'</i>':'')+'</span>';void t.offsetWidth;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show');},3800);}
 
-function setMode(v){on=v;document.body.classList.toggle('pa-on',on);btn.classList.toggle('on',on);fab.querySelector('.pa-state').textContent=on?'ON':'OFF';layer.style.display=on?'block':'none';if(on){renderAll();toast('标注模式已开启','点元素选「🎛 直接微调」或「✍️ 文字说明」· 开关与清单已合并为一个浮窗');}else{closeDialog();updatePanel();}}
+function setMode(v){on=v;document.body.classList.toggle('pa-on',on);btn.classList.toggle('on',on);fab.querySelector('.pa-state').textContent=on?'ON':'OFF';layer.style.display=on?'block':'none';if(on){renderAll();toast('标注模式已开启','点元素选「🎛 直接微调」或「✍️ 文字说明」');}else{closeDialog();updatePanel();toast('标注模式已关闭','可继续预览页面，或再次点击书签启用标注~');}}
 function toggle(){setMode(!on);}
 
 btn.onclick=function(){if(fab._drag)return;toggle();};
@@ -392,6 +402,12 @@ applyAll();renderAll();setMode(true);
   var bm = 'javascript:' + encodeURIComponent('(function(){' + src + '\n})();');
   document.getElementById('bm').setAttribute('href', bm);
   document.getElementById('bm-code').value = bm;
+  // 此处按钮仅用于「拖到书签栏」，禁止直接点击触发（避免在安装页就启动标注、逻辑混乱）
+  document.getElementById('bm').addEventListener('click', function(e){
+    e.preventDefault();
+    var w=document.getElementById('bm-warn');
+    if(w){ w.classList.add('show'); clearTimeout(window.__bmwt); window.__bmwt=setTimeout(function(){ w.classList.remove('show'); }, 2800); }
+  });
   function copyCode(){ var t=document.getElementById('bm-code'); t.select(); try{document.execCommand('copy');}catch(e){} try{navigator.clipboard&&navigator.clipboard.writeText(t.value);}catch(e){} alert('已复制。去浏览器新建书签，把它粘贴到“网址”里保存即可。'); }
 </script>
 </body>
