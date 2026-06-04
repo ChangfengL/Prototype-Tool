@@ -7,8 +7,8 @@
 <style>
   :root{
     --red:#FF4438;--red2:#FF6B35;--amber:#FFB020;
-    --ink:#14110F;--ink2:#1d1916;--paper:#F2EDE4;--muted:#9A9186;
-    --line:rgba(242,237,228,.10);
+    --ink:#14110F;--ink2:#1d1916;--paper:#F2EDE4;--muted:#B7AE9F;
+    --line:rgba(242,237,228,.12);
     --mono:ui-monospace,"SF Mono","Cascadia Code",Consolas,monospace;
     --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
   }
@@ -17,22 +17,22 @@
     margin:0;min-height:100vh;color:var(--paper);font:15px/1.7 var(--sans);
     background-color:var(--ink);
     background-image:
-      radial-gradient(820px 520px at 86% -6%,rgba(255,68,56,.15),transparent 60%),
-      radial-gradient(720px 520px at 4% 106%,rgba(255,176,32,.08),transparent 55%),
-      repeating-linear-gradient(0deg,transparent 0,transparent 31px,rgba(242,237,228,.035) 31px,rgba(242,237,228,.035) 32px),
-      repeating-linear-gradient(90deg,transparent 0,transparent 31px,rgba(242,237,228,.035) 31px,rgba(242,237,228,.035) 32px);
+      radial-gradient(820px 520px at 86% -6%,rgba(255,68,56,.11),transparent 60%),
+      radial-gradient(720px 520px at 4% 106%,rgba(255,176,32,.05),transparent 55%),
+      repeating-linear-gradient(0deg,transparent 0,transparent 31px,rgba(242,237,228,.02) 31px,rgba(242,237,228,.02) 32px),
+      repeating-linear-gradient(90deg,transparent 0,transparent 31px,rgba(242,237,228,.02) 31px,rgba(242,237,228,.02) 32px);
     padding:58px 24px 90px;
   }
   .wrap{max-width:760px;margin:0 auto;}
   h1{font-size:clamp(34px,6.4vw,54px);line-height:1.04;margin:0;font-weight:800;letter-spacing:-.02em;}
   h1 .pin{display:inline-flex;align-items:center;justify-content:center;width:.84em;height:.84em;font-size:.46em;font-family:var(--mono);background:radial-gradient(circle at 35% 30%,#FF6B5A,var(--red) 72%);color:#fff;border-radius:50%;border:2px solid rgba(255,255,255,.92);vertical-align:.22em;margin-left:.1em;box-shadow:0 4px 12px rgba(255,68,56,.5);}
-  .lead{color:var(--muted);font-size:16px;margin:16px 0 0;max-width:62ch;}
+  .lead{color:#D9D1C5;font-size:16px;margin:16px 0 0;max-width:62ch;}
   .lead b{color:var(--paper);font-weight:600;}
   .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px;}
   .tag{font:600 12px var(--sans);color:var(--paper);background:rgba(242,237,228,.06);border:1px solid var(--line);border-radius:999px;padding:5px 13px;}
   .tag b{color:var(--amber);font-weight:700;}
 
-  .card{background:linear-gradient(165deg,rgba(40,34,29,.72),rgba(20,17,14,.6));border:1px solid var(--line);border-radius:18px;padding:24px 26px;margin:22px 0;box-shadow:0 20px 50px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.04);}
+  .card{background:linear-gradient(165deg,#2b241e,#201b16);border:1px solid rgba(242,237,228,.16);border-radius:18px;padding:24px 26px;margin:22px 0;box-shadow:0 24px 60px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06);}
   .card h3{margin:0 0 16px;font-size:18px;font-weight:700;color:var(--paper);display:flex;align-items:center;gap:12px;letter-spacing:.01em;}
   .card h3 .num{font:700 15px/1 var(--sans);color:#fff;background:linear-gradient(135deg,#FF4438,#FF6B35);border:none;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(255,68,56,.3);flex:0 0 auto;}
   .card p{margin:10px 0;}
@@ -54,6 +54,7 @@
   .bm-warn{display:none;font:600 12px var(--sans);color:#FF8A7A;background:rgba(255,68,56,.12);border:1px solid rgba(255,68,56,.35);border-radius:8px;padding:5px 11px;}
   .bm-warn.show{display:inline-flex;align-items:center;animation:bm-warnin .22s ease;}
   @keyframes bm-warnin{from{opacity:0;transform:translateY(-3px);}to{opacity:1;transform:translateY(0);}}
+  .bm-tip{margin-top:13px;color:var(--muted);font-size:13px;line-height:1.7;}
 
   textarea#bm-code{width:100%;height:84px;background:rgba(0,0,0,.35);color:var(--muted);border:1px dashed var(--line);border-radius:10px;padding:11px 12px;font:11px/1.5 var(--mono);box-sizing:border-box;resize:vertical;outline:none;}
   textarea#bm-code:focus{border-color:rgba(255,176,32,.4);color:#cfc6b8;}
@@ -90,9 +91,14 @@
       <h3><span class="num">一</span>安装（任选其一）</h3>
       <p><b>方式 A · 拖拽安装：</b>把下面这枚开关直接拖到浏览器的<b>书签栏</b>即可。</p>
       <p class="bm-wrap"><a class="bm" id="bm" title="按住拖到浏览器书签栏（请勿直接点击）"><span class="grip" aria-hidden="true">⠿</span><span class="ico">⌖</span><span class="bm-lab">原型标注</span><span class="mini"></span></a><span class="bm-hint"><span class="arrow">👈</span>按住拖到<b>书签栏</b></span><span id="bm-warn" class="bm-warn">⚠️ 是「拖到书签栏」，不是点击我哦～</span></p>
+      <p class="bm-tip">💡 没看到书签栏？按 <span class="k">Ctrl + Shift + B</span>（Mac：<span class="k">⌘ + Shift + B</span>）即可显示 / 隐藏书签栏，再把上面的开关拖上去。</p>
       <p style="margin-top:20px"><b>方式 B · 手动安装：</b>新建一个书签，名称随意，把下面这段代码粘贴到“网址 / URL”里保存。</p>
       <textarea id="bm-code" readonly></textarea>
       <button class="copy" onclick="copyCode()">📋 复制书签代码</button>
+      <ul class="notes" style="margin-top:18px;padding-top:15px;border-top:1px solid var(--line);">
+        <li><b>file://</b> 打开也能用；若某些浏览器有限制，推荐用本地服务器（如 <code>npx serve</code>）打开页面。</li>
+        <li>它只在<b>浏览器内存</b>中运行，<b>不向被标注的页面写入任何代码</b>；可视化微调只是<b>运行时预览</b>，刷新后从本地存储重新套用，永不落到文件。</li>
+      </ul>
     </div>
 
     <div class="card">
@@ -106,14 +112,6 @@
       </ol>
     </div>
 
-    <div class="card">
-      <h3><span class="num">三</span>备注</h3>
-      <ul class="notes">
-        <li><b>file://</b> 打开也能用；若某些浏览器有限制，推荐用本地服务器（如 <code>npx serve</code>）打开页面。</li>
-        <li>它只在<b>浏览器内存</b>中运行，<b>不向被标注的页面写入任何代码</b>；可视化微调只是<b>运行时预览</b>，刷新后从本地存储重新套用，永不落到文件。</li>
-        <li>这是书签热身版；后续可升级为浏览器扩展，获得截图、侧边栏、URL 分库、精确导出等更强能力。</li>
-      </ul>
-    </div>
   </div>
 
 <!-- ====== 工具源码（text/plain，不执行；由下方脚本生成 bookmarklet） ====== -->
