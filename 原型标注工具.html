@@ -416,32 +416,33 @@ function copyText(text,ok,fail){function fallback(){var ta=document.createElemen
 function copyOut(){if(!annos.length){toast('还没有标注','点击页面元素即可添加');return;}var md=exportMd();copyText(md,function(){toast('已复制 '+annos.length+' 条标注','含 before→after 精确值，直接粘贴给 AI');},function(){toast('复制失败','请手动选中导出内容复制');});}
 function toast(title,sub,duration){var t=document.querySelector('.pa-toast');if(!t){t=markUi(document.createElement('div'));t.className='pa-toast';document.body.appendChild(t);}else markUi(t);t.innerHTML='<span class="pa-ti">⌖</span><span class="pa-tt"><b>'+esc(title)+'</b>'+(sub?'<i>'+esc(sub)+'</i>':'')+'</span>';void t.offsetWidth;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show');},duration||3800);}
 
-function setMode(v){on=v;document.body.classList.toggle('pa-on',on);btn.classList.toggle('on',on);fab.querySelector('.pa-state').textContent=on?'ON':'OFF';layer.style.display=on?'block':'none';if(on){renderAll();toast('标注模式已开启','按住 Alt（Mac：Option）点击页面元素进行标注 · 平时可正常操作页面',2000);}else{closeDialog(true);exitPick();updatePanel();toast('标注模式已关闭','可继续预览页面，或再次点击书签启用标注~',2000);}}
+function setMode(v){on=v;document.body.classList.toggle('pa-on',on);btn.classList.toggle('on',on);fab.querySelector('.pa-state').textContent=on?'ON':'OFF';layer.style.display=on?'block':'none';if(on){renderAll();toast('标注模式已开启','按住 Ctrl + Alt 点击页面元素进行标注 · 平时可正常操作页面',2000);}else{closeDialog(true);exitPick();updatePanel();toast('标注模式已关闭','可继续预览页面，或再次点击书签启用标注~',2000);}}
 function toggle(){setMode(!on);}
 
 btn.onclick=function(){if(fab._drag)return;toggle();};
 panel.querySelector('.pa-copy').onclick=function(e){e.stopPropagation();copyOut();};
 panel.querySelector('.pa-clr').onclick=function(e){e.stopPropagation();if(confirm('清空全部标注？')){seq=0;resetAndReplay([]);elMap={};}};
 
-var altDown=false,lastHover=null,hlEls=[];
+var pickChordDown=false,lastHover=null,hlEls=[];
 function addHl(el){if(!el||!el.classList)return;if(hlEls.indexOf(el)<0)hlEls.push(el);el.classList.add('pa-hl');}
 function removeHl(el){var i=hlEls.indexOf(el);if(i>=0){hlEls.splice(i,1);el.classList.remove('pa-hl');}}
 function clearHl(){hlEls.slice().forEach(removeHl);}
-function exitPick(){if(altDown){altDown=false;document.body.classList.remove('pa-pick');clearHl();}}
+function exitPick(){if(pickChordDown){pickChordDown=false;document.body.classList.remove('pa-pick');clearHl();}}
+function isPickChord(e){return !!(e&&e.ctrlKey&&e.altKey);}
 function pickable(t){return isElementNode(t)&&!isToolUi(t);}
 function eventTargetFromPath(e){var p=(e.composedPath&&e.composedPath())||[];for(var i=0;i<p.length;i++){if(pickable(p[i]))return p[i];}return pickable(e.target)?e.target:null;}
 function targetFromPoint(x,y,fallback){var el=null;try{el=document.elementFromPoint(x,y);}catch(err){}if(pickable(el))return el;if(fallback&&document.contains(fallback)&&pickable(fallback))return fallback;return null;}
 function getPickTarget(e){return eventTargetFromPath(e)||targetFromPoint(e.clientX,e.clientY,null);}
 function blockNative(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}
-function startPickFromDown(e){if(!on||dialogOpen||!e.altKey)return;var target=getPickTarget(e);if(!target)return;blockNative(e);if(pendingPick)return;pendingPick={target:target,x:e.clientX,y:e.clientY};suppressPickClick=Date.now()+500;exitPick();setTimeout(function(){var p=pendingPick;pendingPick=null;if(!p)return;var target=targetFromPoint(p.x,p.y,p.target);if(target)openPicker(target,p.x+14,p.y+14);else toast('未能选中元素','页面结构刚刚变化，请再按 Alt 点击一次',1800);},0);}
+function startPickFromDown(e){if(!on||dialogOpen||!isPickChord(e))return;var target=getPickTarget(e);if(!target)return;blockNative(e);if(pendingPick)return;pendingPick={target:target,x:e.clientX,y:e.clientY};suppressPickClick=Date.now()+500;exitPick();setTimeout(function(){var p=pendingPick;pendingPick=null;if(!p)return;var target=targetFromPoint(p.x,p.y,p.target);if(target)openPicker(target,p.x+14,p.y+14);else toast('未能选中元素','页面结构刚刚变化，请再按 Ctrl + Alt 点击一次',1800);},0);}
 document.addEventListener('mousemove',function(e){lastHover=eventTargetFromPath(e)||e.target;},true);
 document.addEventListener('pointerdown',startPickFromDown,true);
 document.addEventListener('mousedown',startPickFromDown,true);
-document.addEventListener('click',function(e){if(suppressPickClick>Date.now()){blockNative(e);return;}if(!on||dialogOpen||!e.altKey)return;var target=getPickTarget(e);if(!target)return;blockNative(e);var tx=e.clientX,ty=e.clientY;exitPick();openPicker(target,tx+14,ty+14);},true);
-document.addEventListener('mouseover',function(e){var target=eventTargetFromPath(e);if(on&&!dialogOpen&&altDown&&target)addHl(target);});
+document.addEventListener('click',function(e){if(suppressPickClick>Date.now()){blockNative(e);return;}if(!on||dialogOpen||!isPickChord(e))return;var target=getPickTarget(e);if(!target)return;blockNative(e);var tx=e.clientX,ty=e.clientY;exitPick();openPicker(target,tx+14,ty+14);},true);
+document.addEventListener('mouseover',function(e){var target=eventTargetFromPath(e);if(on&&!dialogOpen&&pickChordDown&&target)addHl(target);});
 document.addEventListener('mouseout',function(e){removeHl(eventTargetFromPath(e)||e.target);});
-window.addEventListener('keydown',function(e){if(on&&!dialogOpen&&e.key==='Alt'){if(!altDown){altDown=true;document.body.classList.add('pa-pick');}if(pickable(lastHover))addHl(lastHover);}});
-window.addEventListener('keyup',function(e){if(e.key==='Alt')exitPick();});
+window.addEventListener('keydown',function(e){if(on&&!dialogOpen&&(e.key==='Alt'||e.key==='Control')&&isPickChord(e)){if(!pickChordDown){pickChordDown=true;document.body.classList.add('pa-pick');}if(pickable(lastHover))addHl(lastHover);}});
+window.addEventListener('keyup',function(e){if(e.key==='Alt'||e.key==='Control')exitPick();});
 window.addEventListener('blur',exitPick);
 window.addEventListener('scroll',renderMarks,true);
 window.addEventListener('resize',function(){renderMarks();[fab,document.querySelector('.pa-dialog')].forEach(function(el){if(el&&el.style.left)clamp(el);});});
