@@ -28,7 +28,7 @@
 
 ---
 
-## 三、当前状态：书签版 v0（已完成）
+## 三、当前状态：书签版 v0.6（已完成）
 
 - **本目录文件**：
   - `原型标注工具.html` —— 同时是**安装页**（拖书签 / 复制书签代码）和**源码载体**。
@@ -37,11 +37,11 @@
 - **已实现功能**：
   - 浮动启动按钮（**可拖动**）、标注模式开关
   - 按住 `Ctrl + Alt` 点选页面元素，鼠标悬停高亮，自动打**编号红色针脚**
-  - 标注弹窗支持「直接微调」与「文字说明」两种模式：可改文案、字号、字重、颜色、背景、圆角、宽高，并实时预览
+  - 标注弹窗支持「直接微调」与「文字说明」两种模式：可改文案、**输入框内容**、字号、字重、颜色、背景、圆角、宽高，并实时预览
   - 元素类型感知：识别文字、按钮、图片/媒体、输入控件、容器/区块，只展示相关调整项
   - 选中层级面包屑：可从标注弹窗中改选父级元素，也可再切回原子元素；改选后会短暂高亮当前目标
-  - 针脚锚定到元素（滚动/缩放时**重新定位**）
-  - 标注清单面板：**可拖动 + 可折叠**；按"板块"**分组**展示；可编辑/删除/清空
+  - 针脚锚定到元素（滚动/缩放时**重新定位**，rAF 节流）
+  - 标注清单面板：**可拖动 + 可折叠**；按"板块"**分组**展示；可编辑/删除/清空；iframe 内条目带 `iframe` 标识
   - 底部**自动消失的 toast** 提示（点击穿透、不挡选取）
   - 一键"📋 复制给AI"：导出**按板块分组的 Markdown**
   - 标注存浏览器 `localStorage`（按 `location.pathname` 分库），刷新不丢；读取时会过滤异常数据，降低坏数据导致启动失败的风险
@@ -77,6 +77,30 @@
 
 仍需注意：`iframe` 内部、纯 `canvas` 图表内部、跨域内容、以及浏览器严格 CSP/Trusted Types 页面，仍可能超出 bookmarklet 的稳定能力边界，后续更适合用浏览器扩展承载。
 
+### v0.6 同源 iframe 内部标注（最新）
+
+1. **Master-Agent 架构**：顶层文档持有唯一 UI（开关/清单/弹窗/针脚图层）与全部数据；向每个**同源** iframe 注入一个轻量 Agent（约 50 行），只负责帧内的组合键监听、悬停高亮、十字光标，选中后经 `window.__PROTO_ANNO_MASTER__` 上报给 Master。
+2. **Frame path 选择器**：标注记录新增 `f` 字段（iframe 索引路径，如 `[0,1]` = 第 1 个 iframe 内的第 2 个 iframe），选择器仍只描述帧内路径；解析时从顶层逐级下钻 `contentDocument` 再 `querySelector`。导出渲染为 `iframe#1 >> iframe#2 >> .btn`。
+3. **跨帧坐标换算**：元素 rect 先叠加所在 iframe 的滚动量得到帧内文档坐标，再叠加 iframe 内容原点（`iframeRect + border`）得到顶层文档坐标；渲染针脚时减去顶层滚动量。重渲染触发源 = 顶层 scroll/resize + 每个已注册 iframe 的 scroll/resize（统一 rAF 节流）。
+4. **动态 iframe**：MutationObserver 监听新增 iframe + 每个 iframe 的 `load` 事件补接/重注入；iframe 刷新后自动重放该帧内的标注。
+5. **降级与提示**：启动时扫描并分类 iframe——同源（内部可标）/ 跨域或 sandbox（仅能标外框）/ 注入被 CSP 拦截，在开启 toast 中汇总告知；`file://` 下读不到 iframe 内容时会提示改用本地服务器。
+6. **兼容边界（书签版无法突破）**：跨域 iframe、`sandbox` 未加 `allow-same-origin` 的 iframe、严格 CSP 页面（Agent 以内联 script 注入会被拦）、`file://` 下的 iframe（Chrome 默认禁止跨文件读取）——这些仍需浏览器扩展（`all_frames` content script + `runtime.sendMessage`）承载。
+
+7. **表单控件与对话框焦点修复（v0.6.1）**：
+   - Chromium 中 `disabled` 表单控件（input/textarea/button）**不触发 click**（探针证实仅剩 pointerdown），旧版 Agent 只在 click 上报导致这类元素无法标注；现改为 **pointerdown 即上报**（`elementFromPoint` 坐标兜底 + 600ms 内抑制后续 click 防重复），与顶层 Master 的机制对齐。iframe 内的禁用/只读表单字段现在均可正常标注。
+   - 输入控件/容器/图片类元素打开微调台时没有文案输入框可聚焦，导致 Esc / Ctrl+Enter 失效、打字"没有反应"；现对话框打开时若无可聚焦输入框，则**对话框容器自身获得焦点**，Esc 取消、Ctrl+Enter 保存全程可用。
+   - 未做任何改动就点保存时，原来是静默无响应；现会 toast 提示"还没有做任何改动"，并引导切换到「文字说明」模式写备注。
+
+8. **点击抑制误伤与悬浮高亮丢失修复（v0.6.2）**：
+   - **suppress 误伤对话框按钮**：点选后 500ms 内的 click 会被无条件 `stopImmediatePropagation`——包括工具自己对话框上的「文字说明 / 保存 / 取消 / 步进器」按钮，快速用户点选后立即点这些按钮会被静默吞掉（"点了没反应"）。现抑制窗口只在**同一坐标（±4px）的同一物理点击**上生效，且工具自身 UI（`data-proto-anno-ui`）的点击完全放行。
+   - **悬浮高亮被重渲染吞掉**：hover 清单条目与滚动巧合时（滚动面板/页面/iframe 触发 rAF `renderMarks`，或 iframe 加载完成触发 `renderAll`），标记层重建后 `hot` 类全丢且鼠标不再移动不会重新触发，表现为"只有第一项能高亮"。现以 `hotN` 记录当前高亮项，`renderMarks`/`renderList` 重建后自动恢复；面板 mouseleave 统一清除。
+   - 悬浮高亮视觉增强：角标放大至 17px 并变为琥珀色 `#FFB020`，与工具其他 hover 语言统一，深浅背景都明确。
+
+9. **输入框内容直接编辑（v0.6.3）**：
+   - input/textarea（text/search/url/tel/email/password/number）在微调台新增「内容」编辑框，直接改 `el.value`：实时预览、自动生成 `内容 A→B` 意见、导出 `· 内容："A" → "B"`；**仅改内容不动样式也能保存**（此前输入类元素无任何可改字段，保存会被"无改动"挡掉）。
+   - 数据模型：`base`/`now` 增加 `value` 字段（sanitize/apply/revert/restore/摘要/导出全链路适配）；取消编辑、删除标注均正确回滚 `el.value`；刷新后从存储重放。
+   - checkbox/radio/date 等非文本类控件不出现内容框（其 value 无编辑语义），仍可标样式、写说明。
+
 ---
 
 ## 四、怎么用
@@ -102,6 +126,8 @@
 > 早期版本格式略有差异，但都包含：**序号 + 板块/上下文 + 元素摘要 + CSS 选择器 + 修改说明**。
 > AI 拿到后据此**定位元素并改代码**（注意：选择器是辅助定位，最终应结合元素文本与上下文精确匹配）。
 
+**iframe 内元素**（v0.6+）：选择器带 frame path 前缀，如 `iframe#1 >> .btn`、`iframe#1 >> iframe#2 >> .btn`。含义：`iframe#n` 指**所在文档中第 n 个（从 1 计）iframe 元素**，逐级下沉；`>>` 之后是目标元素在**该 iframe 文档内**的选择器。跨域 iframe 内部的元素无法标注，只能标注 iframe 外框本身。
+
 ---
 
 ## 六、玩法路线图（Backlog，按价值簇组织）
@@ -116,6 +142,7 @@
 
 - ✅🔖 **可视化直接微调（所见即所得）**：选中元素弹微调台，改字号/字重/颜色/背景/圆角/宽高，**实时预览**；导出 `font-size 13px → 30px` 等 before→after 精确值。【v0.2/v0.3】
 - ✅🔖 **改文案**：纯文本元素可直接改文字，导出"文案 A→B"。【v0.2】
+- ✅🔖 **改输入框内容**：input/textarea（text 类）可直接改 value，实时预览，导出"内容 A→B"；仅改内容不动样式也能保存；checkbox/radio/date 等非文本控件不出现该框。【v0.6.3】
 - ✅🔖 **元素类型感知**：识别 文字/按钮/图片/输入/容器，按类型只显示相关控件，弹窗与导出均标注类型。【v0.3】
 - ✅🔖 **两模式分离**：一条标注只能是「🎛 直接微调」或「✍️ 文字说明」之一，消除"以哪个为准"的来源冲突。【v0.3】
 - ✅🔖 **标记升级**：标记采用「**四角 L 形选择手柄 + 左上角编号角标**」，并加**对比光晕**（白+暗双层，深浅背景都清晰）——用"工具选中"的视觉语言与页面自带 border 区分，不靠配色硬抗；hover 角标 / 清单条目互相高亮，点清单条目**定位回显**（滚动到元素 + 闪烁）。【v0.4 / v0.4.2】
@@ -169,6 +196,7 @@
 - **持久化键**：`proto-anno::<location.pathname>`；读取时会做 schema 清洗，过滤异常标注记录。
 - **样式回滚**：微调保存时记录元素原始 inline 样式；删除/清空/编辑后采用“恢复基线 → 重放剩余标注”的策略，处理同一元素多条标注的顺序问题。
 - **复制反馈**：优先 Clipboard API，失败后回退到 textarea + `execCommand('copy')`；只有真实成功后提示“已复制”。
+- **iframe 支持（v0.6）**：Master（顶层）通过 `querySelectorAll('iframe')` 逐级扫描注册同源 iframe（try/catch 读 `contentDocument`，跨域/sandbox 直接跳过），向每个同源 iframe 的 head 插入内联 `<script>`（AGENT_SRC）与少量 CSS；Agent 经 `window.top.__PROTO_ANNO_MASTER__` 上报；frame path 存于标注的 `f` 字段；坐标换算 = iframe 视口 rect + iframe 滚动 → 帧内文档坐标，+ iframe 内容原点（`iframeRect + border`）→ 顶层文档坐标，渲染时 − 顶层滚动。MutationObserver（childList/subtree，250ms 防抖）+ iframe `load` 事件处理动态出现与刷新重放。scroll/resize 统一走 `requestAnimationFrame` 节流。
 - **改源码后**：需**重新生成书签**（重新拖/复制），旧书签不会自动更新。
 - **依赖**：无外部依赖；纯原生 JS；不联网。
 
