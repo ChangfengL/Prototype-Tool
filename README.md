@@ -28,6 +28,46 @@
 
 ---
 
+## 二·五、浏览器扩展版 v1.0（`extension Version/`，新增）
+
+> 书签版之后的正式形态：Chrome/Edge MV3 扩展。**1:1 平移书签版 v0.6.3 全部功能**，并解决书签版 4 个硬边界。
+
+### 安装（Chrome / Edge 相同）
+
+1. 打开 `chrome://extensions`（Edge：`edge://extensions`）→ 开启「开发者模式」
+2. 点「加载解压缩的扩展」→ 选择本目录的 `extension Version/` 文件夹
+3. （仅标注 file:// 页面需要）扩展卡片 → 详情 → 开启「允许访问文件网址」
+
+### 使用
+
+- **点击工具栏图标**（或快捷键 `Alt+Shift+A`，可在 `edge://extensions/shortcuts` 自定义）= 开/关标注模式
+- 之后操作与书签版完全一致：`Ctrl + Alt` 点选 → 微调/备注 → 「📋 复制给 AI」
+- **自动回显**：某页面存有标注时，再次打开/刷新该页会自动只读回显针脚 + 底部小条「进入编辑」，无需手动激活；没有标注的页面不注入任何 UI
+- **徽标**：工具栏图标上的数字 = 当前页面的标注条数
+
+### 相比书签版的差异
+
+| 能力 | 书签版 | 扩展版 v1 |
+|---|---|---|
+| 跨域 iframe 内部标注 | ❌ 只能标外框 | ✅ 支持（含 sandbox iframe） |
+| 严格 CSP 页面 | ❌ 注入被拦 | ✅ 内容脚本不受页面 CSP 影响 |
+| file:// 下 iframe | ❌ 读不到 | ✅ 需勾选「允许访问文件网址」 |
+| 存储分库 | 按 pathname（query 不同会串台） | 按完整 URL（去 hash） |
+| 源码更新 | 需重新拖书签 | 重载扩展即生效 |
+| 截图/框选、原生侧边栏 | — | v2 规划 |
+
+### 架构（维护者备查）
+
+- `manifest.json`：MV3；content script `all_frames` + `match_origin_as_fallback`（覆盖 sandbox/about:blank 帧）；仅 `storage` 权限 + `<all_urls>`/`file:///*` host（无 webNavigation，避免「读取浏览记录」警告）
+- `content/annotator.js`：单文件双角色。top frame = Master（UI/存储/编辑器/路由）；子 frame = Child（本帧本地渲染针脚、本地应用样式微调，派生数据本帧算好后上报）。帧树识别用 `window.postMessage` + token 握手（嵌套帧由 ACK 动态登记；导出格式 `iframe#N >>` 的序号 = 各级文档 DOM 中 iframe 的顺序，与书签版语义一致）
+- 休眠策略：页面无标注且未激活时，内容脚本只挂消息监听，零 DOM 接触
+- 坐标：每个 frame 在自己文档内渲染自己的针脚（局部坐标），无跨帧坐标换算；跨帧编辑弹窗定位 = 帧链逐级 iframe rect + border 累加
+- `background/service-worker.js`：图标点击/快捷键 → 激活消息；tab 完成加载 → 按 storage 计数设徽标
+- 数据迁移：首次激活时检测到同源 `localStorage` 中的书签版数据会弹确认迁移（原数据清空）
+- 测试：`.workbuddy/tmp/anno-ext-e2e/`（run-ext-e2e 主流程 18 项 / run-ext-edge 跨源+sandbox 6 项 / run-ext-storage 分库隔离 4 项；需 `python -m http.server 8123` 于 anno-e2e 目录 + `NODE_PATH=<managed workspace>/node_modules`）
+
+---
+
 ## 三、当前状态：书签版 v0.6（已完成）
 
 - **本目录文件**：

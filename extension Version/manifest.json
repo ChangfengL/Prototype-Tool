@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "原型标注工具",
+  "version": "1.0.0",
+  "description": "在浏览器里给任意 HTML 页面做可视化点选标注：点中元素 → 写意见/微调 → 一键导出结构化 Markdown 给 AI。",
+  "minimum_chrome_version": "106",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "原型标注（点击开启/关闭标注模式）",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+A"
+      },
+      "description": "开启/关闭标注模式"
+    }
+  },
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "file:///*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/annotator.js"],
+      "css": ["content/annotator.css"],
+      "all_frames": true,
+      "match_origin_as_fallback": true,
+      "run_at": "document_idle"
+    }
+  ]
+}
