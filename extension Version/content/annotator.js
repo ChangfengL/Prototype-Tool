@@ -240,7 +240,8 @@ function buildUi(){
   document.body.appendChild(fab);
   btn=fab.querySelector('.pa-toggle');
   panel=fab.querySelector('.pa-panel');
-  btn.onclick=function(){if(fab._drag)return;setMode(!on);};
+  // 开关只在滑块区域触发；整条标题栏用于拖动
+  fab.querySelector('.pa-sw').onclick=function(e){e.stopPropagation();if(fab._drag)return;setMode(!on);};
   panel.querySelector('.pa-copy').onclick=function(e){e.stopPropagation();copyOut();};
   panel.querySelector('.pa-clr').onclick=function(e){e.stopPropagation();if(confirm('清空全部标注？')){seq=0;elMap={};resetAndReplay([]);}};
   drag(btn,fab);drag(panel.querySelector('.pa-phead'),fab);
@@ -524,7 +525,7 @@ function editAnno(n){
 function selTextOf(a){if(a.f&&a.f.length){var p=[];a.f.forEach(function(i){p.push('iframe#'+(i+1));});return p.join(' >> ')+' >> '+(a.sel||'');}return a.sel||'';}
 function exportMd(){if(!annos.length)return'（无标注）';var g={};annos.forEach(function(a){(g[a.ctx]=g[a.ctx]||[]).push(a);});var md='【原型标注清单】共 '+annos.length+' 条';Object.keys(g).forEach(function(k){md+='\n\n## '+k;g[k].forEach(function(a){var ty=a.type?(a.type.label+' <'+a.type.tag+'>'):'';var cs=chSummary(a);md+='\n- ['+a.n+'] '+(a.mode==='note'?(a.text||'(空)'):(cs?'【微调】 '+cs:'(空)'));md+='\n    · 元素：'+(ty?ty+' · ':'')+'“'+a.summ+'” · 选择器：'+selTextOf(a);if(a.mode!=='note'&&a.now&&a.base){if(a.now.text!=null&&String(a.now.text)!==String(a.base.text))md+='\n    · 文案："'+a.base.text+'" → "'+a.now.text+'"';if(a.now.value!=null&&String(a.now.value)!==String(a.base.value))md+='\n    · 内容："'+a.base.value+'" → "'+a.now.value+'"';var sp=[];PROPS.forEach(function(pr){if(String(a.now[pr.k])!==String(a.base[pr.k]))sp.push(pr.css+' '+(a.base[pr.k]==null?'transparent':a.base[pr.k])+' → '+(a.now[pr.k]==null?'transparent':a.now[pr.k]));});if(sp.length)md+='\n    · 样式：'+sp.join('；');}});});return md;}
 function copyText(text,ok,fail){function fallback(){var ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;left:-9999px;top:0;';document.body.appendChild(ta);ta.focus();ta.select();var done=false;try{done=document.execCommand('copy');}catch(e){}ta.remove();return done;}if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(text).then(function(){if(ok)ok();},function(){if(fallback()){if(ok)ok();}else if(fail)fail();});}else{if(fallback()){if(ok)ok();}else if(fail)fail();}}
-function copyOut(){if(!annos.length){toast('还没有标注','点击页面元素即可添加');return;}var md=exportMd();copyText(md,function(){toast('已复制 '+annos.length+' 条标注','含 before→after 精确值，直接粘贴给 AI');},function(){toast('复制失败','请手动选中导出内容复制');});}
+function copyOut(){if(!annos.length){toast('还没有标注','点击页面元素即可添加');return;}var md=exportMd();copyText(md,function(){toast('已复制 '+annos.length+' 条标注','清单已导出为 Markdown，可直接粘贴给 AI 处理');},function(){toast('复制失败','请手动选中导出内容复制');});}
 function toast(title,sub,duration){
   if(!isTop||!document.body)return;
   var t=document.querySelector('.pa-toast');
@@ -553,7 +554,7 @@ function setMode(v){
     buildUi();startWatch();maybeMigrate();scanFrames();
     applyMode('active');
     var fs=frameSummary();
-    toast('标注模式已开启','按住 Ctrl + Alt 点击页面元素进行标注 · 平时可正常操作页面'+(fs?' · '+fs:''),2600);
+    toast('标注模式已开启','按住 Ctrl + Alt 并点击页面元素，即可添加标注'+(fs?'（含 iframe 内元素）':''),2600);
   }else{
     applyMode(annos.length?'replay':'dormant');
   }
@@ -667,7 +668,48 @@ window.addEventListener('resize',function(){
 });
 
 /* ================= 拖动（Master） ================= */
-function drag(handle,target){handle.addEventListener('mousedown',function(e){if(e.button!==0)return;var sx=e.clientX,sy=e.clientY;var r=target.getBoundingClientRect();var ox=r.left,oy=r.top;var moved=false;function mv(ev){if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>4){moved=true;target._drag=true;}if(moved){var nx=ox+ev.clientX-sx,ny=oy+ev.clientY-sy;var maxX=window.innerWidth-target.offsetWidth-6,maxY=window.innerHeight-target.offsetHeight-6;nx=Math.max(6,Math.min(nx,Math.max(6,maxX)));ny=Math.max(6,Math.min(ny,Math.max(6,maxY)));target.style.left=nx+'px';target.style.top=ny+'px';target.style.right='auto';target.style.bottom='auto';}}function up(){document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);setTimeout(function(){target._drag=false;},0);}document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);});}
+// 拖动中用 pointer capture + pointerup/pointercancel 收尾：业务页面在捕获阶段吞 mouseup
+// 或用 setPointerCapture 抢事件时，拖动也不会卡死。
+// capture 延迟到实际开始拖动（位移>4px）才启用——纯点击不捕获，
+// 否则 click 的合成目标会被重定向到 handle，子元素（如开关滑块）的 click 永远收不到。
+function drag(handle,target){
+  handle.addEventListener('pointerdown',function(e){
+    if(e.button!==0)return;
+    var pid=e.pointerId,sx=e.clientX,sy=e.clientY;var r=target.getBoundingClientRect();var ox=r.left,oy=r.top;var moved=false;
+    function mv(ev){
+      if(ev.pointerId!==pid)return;
+      if(!moved&&Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>4){
+        moved=true;target._drag=true;
+        try{handle.setPointerCapture(pid);}catch(err){}
+      }
+      if(moved){
+        var nx=ox+ev.clientX-sx,ny=oy+ev.clientY-sy;
+        var maxX=window.innerWidth-target.offsetWidth-6,maxY=window.innerHeight-target.offsetHeight-6;
+        nx=Math.max(6,Math.min(nx,Math.max(6,maxX)));ny=Math.max(6,Math.min(ny,Math.max(6,maxY)));
+        target.style.left=nx+'px';target.style.top=ny+'px';target.style.right='auto';target.style.bottom='auto';
+        ev.preventDefault();
+      }
+    }
+    function up(ev){
+      if(ev&&ev.pointerId!==undefined&&ev.pointerId!==pid)return;
+      handle.removeEventListener('pointermove',mv);
+      handle.removeEventListener('pointerup',up);
+      handle.removeEventListener('pointercancel',up);
+      document.removeEventListener('pointerup',docUp);
+      document.removeEventListener('pointercancel',docUp);
+      window.removeEventListener('blur',docUp);
+      setTimeout(function(){target._drag=false;},0);
+    }
+    // document 级兜底：capture 被业务页面抢占或 handle 被重建时，pointerup 也必达
+    function docUp(ev){if(ev.pointerId===pid)up(ev);}
+    handle.addEventListener('pointermove',mv);
+    handle.addEventListener('pointerup',up);
+    handle.addEventListener('pointercancel',up);
+    document.addEventListener('pointerup',docUp);
+    document.addEventListener('pointercancel',docUp);
+    window.addEventListener('blur',docUp);
+  });
+}
 
 /* ================= 消息路由 ================= */
 window.addEventListener('message',function(e){
