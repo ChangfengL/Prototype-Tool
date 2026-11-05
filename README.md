@@ -31,6 +31,7 @@
 ## 二·五、浏览器扩展版 v1.0（`extension Version/`，新增）
 
 > 书签版之后的正式形态：Chrome/Edge MV3 扩展。**1:1 平移书签版 v0.6.3 全部功能**，并解决书签版 4 个硬边界。
+> **v1.1 已叠加：浮窗模式条（自由点选/截图按钮）、截图标注模式、导出 MD/JSON 双格式。见「二·七」。**
 
 ### 安装（Chrome / Edge 相同）
 
@@ -41,8 +42,10 @@
 ### 使用
 
 - **点击工具栏图标**（或快捷键 `Alt+Shift+A`，可在 `edge://extensions/shortcuts` 自定义）= 开/关标注模式
-- 之后操作与书签版完全一致：`Ctrl + Alt` 点选 → 微调/备注 → 「📋 复制给 AI」
-- **自动回显**：某页面存有标注时，再次打开/刷新该页会自动只读回显针脚 + 底部小条「进入编辑」，无需手动激活；没有标注的页面不注入任何 UI
+- 元素标注：`Ctrl + Alt` 点选（快捷键通道），或点浮窗 **🎯 点选** 进入自由点选（单击即标注，Esc 退出）
+- 截图标注：点浮窗 **📷 截图** → 拖动框选（或单击吸附元素）→ 写修改意见 → 保存
+- 之后操作与书签版完全一致：微调/备注 → 「📋 复制给 AI」
+- **标注可见性**：**只有开关 ON 时才显示针脚和样式微调**；关闭或刷新后页面完全恢复原始 HTML，仅在底部保留一个小条「本页有 N 条标注 · 进入编辑」；没有标注的页面不注入任何 UI
 - **徽标**：工具栏图标上的数字 = 当前页面的标注条数
 
 ### 相比书签版的差异
@@ -54,7 +57,57 @@
 | file:// 下 iframe | ❌ 读不到 | ✅ 需勾选「允许访问文件网址」 |
 | 存储分库 | 按 pathname（query 不同会串台） | 按完整 URL（去 hash） |
 | 源码更新 | 需重新拖书签 | 重载扩展即生效 |
-| 截图/框选、原生侧边栏 | — | v2 规划 |
+| 截图/框选、原生侧边栏 | — | 截图/框选 ✅ v1.1；原生侧边栏 v2 规划 |
+
+---
+
+## 二·七、扩展版 v1.1（自由点选 + 截图标注 + 导出升级）
+
+### 1. 浮窗模式条与自由点选
+
+- ON 状态浮窗新增 `[🎯 点选] [📷 截图]` 模式条，两模式互斥
+- **🎯 自由点选**：单击元素直接弹标注窗（无需按 Ctrl+Alt），悬停高亮跟随；**一次一标注——选中即自动退出点选态**（避免持续误触），连标可用 Ctrl+Alt 快捷键
+- 工具自身 UI（浮窗/清单/弹窗）上的任何点击都不会选中底层页面元素
+- `Ctrl + Alt` 快捷键通道**保留**，任何时候可用，两者可混用
+
+### 2. 截图标注模式
+
+- 流程：📷 → 全屏取景遮罩 → **拖动自由框选 / 悬停吸附元素（单击取整元素矩形）** → 视口截图 + 按 dpr 裁剪（长边 >1600px 降采样）→ 编辑窗（截图预览 + 意见）→ 保存
+- 截图瞬间工具全部 UI 自动隐身（`pa-capturing`），保证图片干净；截图经 service worker `captureVisibleTab` 完成，**跨域 iframe 内容也可截**（DOM 点选做不到的场景）
+- 数据模型：标注记录新增 `kind` 字段（`element`/`shot`，旧数据缺省视为 element，零迁移）；shot 记录含 `img`(dataURL)、`region`(文档坐标锚点，刷新后针脚锚回原位)、`vp`(视口+dpr 元数据)、`anchor`(邻近元素 selector+摘要，可为空)
+- 截图项编辑态仅改意见/删除；清单行显示缩略图；编号与 element 标注混排连续
+- manifest 新增 `unlimitedStorage`（防图片撑爆 10MB 配额，无安装警告）
+
+### 3. 导出升级（MD/JSON 双格式）
+
+- 「📋 复制给 AI」左侧新增 `[MD|JSON]` 切换
+- **MD（精简，给人读/粘聊天窗）**：每条 element 追加 完整文本锚点（≤200字）、outerHTML 片段（前300字符）、文档坐标；**不再输出页面 URL**；截图条目为纯文字标签「截图标注：意见」+ 邻近元素选择器 + 一行「复制这张截图粘贴即可（图中已标注编号 N）」——全部无 emoji，人和 AI 都能直读
+- **JSON（精简，给 AI 解析）**：`{tool, version:2, count, annotations[]}`，element 含 `target{selector,framePath,tag,text,outerHTML,pin}` + `section` + `changes{text?,value?,styles[]}`，shot 含 `section/imageLabel/nearElement/region`；不输出 URL、导出时间、viewport 等对定位无帮助的字段
+- **截图交付（带编号印章）**：清单条目 **🖼** 一键复制时，先把截图烘焙成「左上朱红 `#编号` + 板块名，底部深色条写意见」的成品图再写入剪贴板——图片自带编号，粘贴到任意 Agent 对话框都能与文字清单的 `[N]` 条目直接对应，无需依赖粘贴顺序
+
+### 测试
+
+- `tests/` 目录：`node tests/serve.mjs`（起 fixture 服务，端口 8123）+ `node tests/run-smoke.mjs`（**Playwright** 驱动本机 Edge/Chrome 有头窗口跑 43 项断言，需先 `cd tests && npm i`；脚本会自动拉起 fixture 服务）
+- 手动场景清单见 `tests/MANUAL.md`（视觉保真/高分屏 dpr/真实聊天窗贴图/边界环境）
+
+### 架构增量（维护者备查）
+
+- 自由点选：Master 持有 `freePick` 状态，经 `PA_FLAGS` 广播子帧；`bindPicking` 的点选门槛从 `isPickChord(e)` 放宽为 `isPickChord(e)||freePick`；子帧 Esc 经 `PA_FREEPICK_ESC` 上报 Master 统一退出
+- 截图：仅 top frame 参与；遮罩内 `elementsFromPoint` 穿透工具 UI 取业务元素做吸附/锚点；锚点在选区完成时定格为纯数据（不穿越 `exitShotMode` 清场）；`captureRegion` 时序 = 隐身类名 → 双 rAF + 80ms 合成器缓冲 → SW `PA_CAPTURE`（`sendResponse` 异步通道）→ canvas 按 `devicePixelRatio` 裁剪
+- 导出：`exportMd` 对可见元素 live 富化（iframe 条目退回存储摘要，避免跨帧解析）；`exportJson` 复用 `chStylesOf`/PROPS 生成 changes
+- 已修产品 bug：SW `countForUrl` 之前把 JSON 字符串当数组判 `Array.isArray`，徽标计数恒为 0（v1.0 即存在，本次由冒烟用例暴露后修复）
+
+### v1.1 实测修复（浏览器交互验证）
+
+1. **iframe 标注重复针脚**：主帧 `renderMarks` 未跳过 `f` 非空的记录，用帧内坐标在主文档又画了一枚。现由子帧独占渲染。
+2. **截图框滚动错位**：`region` 存的是文档绝对坐标，只对 window 滚动有效。现按可靠性分级定位：
+   - 锚点元素当前视口位置 + 相对偏移（覆盖任意内层 `overflow:auto` 容器）
+   - iframe 内锚点（`anchor.framePath` 下钻帧内真实元素，覆盖 iframe 自身滚动）
+   - `shotScroll` 滚动量差值兜底（锚点失效时）
+   - 最后退回存储坐标
+   - 同时为各级同源 iframe 挂 scroll/resize 监听，帧内滚动也能触发针脚重绘
+3. **标注可见性归位**：`applyMode` 一度让 `replay`（关闭态）也应用样式并渲染针脚，导致关掉开关后页面仍留有序号。现严格按 `on` 判定——**只有 `active` 显示针脚与样式**；`replay`/`dormant` 一律回滚样式、清空针脚层，页面保持原始 HTML，仅显示底部提示条。
+4. **element 记录缺 `kind` 字段**：新建元素标注未写 `kind:'element'`，数据模型与 shot 不一致，已补齐。
 
 ### 架构（维护者备查）
 

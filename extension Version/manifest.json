@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "原型标注工具",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "在浏览器里给任意 HTML 页面做可视化点选标注：点中元素 → 写意见/微调 → 一键导出结构化 Markdown 给 AI。",
   "minimum_chrome_version": "106",
   "icons": {
@@ -31,7 +31,8 @@
     "service_worker": "background/service-worker.js"
   },
   "permissions": [
-    "storage"
+    "storage",
+    "unlimitedStorage"
   ],
   "host_permissions": [
     "<all_urls>",
